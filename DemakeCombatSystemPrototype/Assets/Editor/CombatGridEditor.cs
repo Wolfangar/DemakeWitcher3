@@ -77,17 +77,11 @@ public class CombatGridEditor : Editor
     
     public override void OnInspectorGUI()
     {
-        Debug.Log("OnInspectorGUI() -- Start");
         serializedObject.Update();
 
-        /*myCombatGridTerrain = (target as CombatGrid).myTerrainGrid;
-        if (myCombatGridTerrain == null)
-        {
-            myCombatGridTerrain = new string[1, 1];
-        }*/
-
-        int newWidth = EditorGUILayout.IntField("Width", myWidth);
-        int newHeight = EditorGUILayout.IntField("Height", myHeight);
+        CombatGrid grid = (target as CombatGrid);
+        int newWidth = EditorGUILayout.IntField("Width", grid.myCurrentGridWidth);
+        int newHeight = EditorGUILayout.IntField("Height", grid.myCurrentGridHeight);
         EditorGUILayout.PropertyField(myCellTemplateProperty);
         EditorGUILayout.PropertyField(myTerrainSpriteLibraryProperty, true);
 
@@ -106,7 +100,6 @@ public class CombatGridEditor : Editor
             myHeight = newHeight;
         }
 
-        CombatGrid grid = (target as CombatGrid);
         LoadGridFromObject(grid);
         
         for (int y = 0; y < myHeight; ++y)
@@ -118,7 +111,6 @@ public class CombatGridEditor : Editor
                 string newValue = EditorGUILayout.TextField(previousValue, GUILayout.Width(20));
                 if (newValue != myGridCache[y, x])
                 {
-                    Debug.Log("IS DIRTY");
                     myIsDirty = true;
                 }
                 myGridCache[y, x] = newValue;
@@ -129,25 +121,17 @@ public class CombatGridEditor : Editor
         grid.SetTerrainGrid(myGridCache, myWidth, myHeight);
 
         serializedObject.ApplyModifiedProperties();
-        Debug.Log("OnInspectorGUI() -- End");
     }
 
     public void OnSceneGUI()
     {
-        Debug.Log("OnSceneGUI() -- Start");
-        CombatGrid grid = (target as CombatGrid);
-
-//        myIsDirty |= grid.IsMySizeDirty();
-        
         if (myIsDirty)
         {
-            Debug.Log("Grid is dirty");
+            CombatGrid grid = (target as CombatGrid);
             Undo.RecordObject(grid, "Combat Grid Change");
-            //grid.myTerrainGrid = myCombatGridTerrain;
             grid.UpdateGrid();
         }
 
         myIsDirty = false;
-        Debug.Log("OnSceneGUI() -- End");
     }
 }

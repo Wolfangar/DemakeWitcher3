@@ -3,10 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CombatGrid : MonoBehaviour {
-    private int myCurrentGridWidth;
-    private int myCurrentGridHeight;
+public class CombatGrid : MonoBehaviour {    
+    public int myCurrentGridWidth;
+    public int myCurrentGridHeight;
     private string[,] myTerrainGrid = new string[0, 0];
+
+    public Vector2Int myHighlightedCell;
 
     [Serializable]
     public struct SpriteEntry
@@ -55,9 +57,6 @@ public class CombatGrid : MonoBehaviour {
 
     public void UpdateGrid(bool force = false)
     {
-        /*myCurrentGridWidth = myTerrainGrid.GetLength(1);
-        myCurrentGridHeight = myTerrainGrid.GetLength(0);*/
-    
         Transform terrainLayer = transform.Find("TerrainBaseLayer");
 
         List<Transform> children = new List<Transform>();
@@ -117,5 +116,37 @@ public class CombatGrid : MonoBehaviour {
             return myTerrainSpriteLibrary[0].name;
 
         return "!";
+    }
+
+    public Transform GetCellAt(int x, int y)
+    {
+        Transform terrainLayer = transform.Find("TerrainBaseLayer");
+        return terrainLayer.Find("Cell_" + x + "_" + y);
+    }
+
+    public void HighlightCell(Vector2Int position)
+    {
+        if (position.x < 0 || position.x >= myCurrentGridWidth || position.y < 0 || position.y >= myCurrentGridHeight)
+            return;
+
+        if (myHighlightedCell != null)
+        {
+            BlurHighlightedCell();
+        }
+
+        myHighlightedCell = position;
+        Transform cell = GetCellAt(myHighlightedCell.x, myHighlightedCell.y);
+
+        float hue, saturation, value;
+        Color.RGBToHSV(Color.blue, out hue, out saturation, out value);
+        saturation *= 0.5f;
+        Color c = Color.HSVToRGB(hue, saturation, value);
+        cell.GetComponent<SpriteRenderer>().color = c;
+    }
+
+    public void BlurHighlightedCell()
+    {
+        Transform cell = GetCellAt(myHighlightedCell.x, myHighlightedCell.y);
+        cell.GetComponent<SpriteRenderer>().color = Color.white;
     }
 }
