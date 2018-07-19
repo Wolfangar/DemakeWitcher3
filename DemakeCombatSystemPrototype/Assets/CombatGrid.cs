@@ -3,60 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CombatGrid : MonoBehaviour {    
-    public int myCurrentGridWidth;
-    public int myCurrentGridHeight;
-    private string[,] myTerrainGrid = new string[0, 0];
+public class CombatGrid : MonoBehaviour
+{
+    public TerrainGridSpriteLibrary myTerrainSpriteLibrary;
+    public TerrainGridData myTerrainGridData;
+    public Transform myCellTemplate;
 
     public Vector2Int myHighlightedCell;
 
-    [Serializable]
-    public struct SpriteEntry
+    public void UpdateGridRepresentation()
     {
-        public string name;
-        public Sprite sprite;
-    }
-    public List<SpriteEntry> myTerrainSpriteLibrary = new List<SpriteEntry>();
-  
-    public Transform myCellTemplate;
-
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
-
-    public string GetTerrainCellAt(int x, int y)
-    {
-        return myTerrainGrid[y, x];
-    }
-
-    public void SetTerrainGrid(string[,] grid, int w, int h)
-    {
-        myTerrainGrid = grid;
-        myCurrentGridWidth = w;
-        myCurrentGridHeight = h;
-    }
-
-    public int GetTerrainWidth()
-    {
-        return myTerrainGrid.GetLength(1);
-    }
-    public int GetTerrainHeight()
-    {
-        return myTerrainGrid.GetLength(0);
-    }
-    public bool IsValidCoord(int x, int y)
-    {
-        return x < GetTerrainWidth() && y < GetTerrainHeight();
-    }
-
-    public void UpdateGrid(bool force = false)
-    {
+        Debug.Log("REPRESENTATION UPDATE");
+    
         Transform terrainLayer = transform.Find("TerrainBaseLayer");
 
         List<Transform> children = new List<Transform>();
@@ -69,9 +27,15 @@ public class CombatGrid : MonoBehaviour {
             GameObject.DestroyImmediate(child.gameObject);
         }
 
-        for (int y = 0; y < myCurrentGridHeight; ++y)
+        if (myTerrainGridData == null)
+            return;
+        
+        int width = myTerrainGridData.myWidth;
+        int height = myTerrainGridData.myHeight;
+
+        for (int y = 0; y < height; ++y)
         {
-            for (int x = 0; x < myCurrentGridWidth; ++x)
+            for (int x = 0; x < width; ++x)
             {
                 Transform cell = GameObject.Instantiate(myCellTemplate, terrainLayer);
                 cell.gameObject.SetActive(true);
@@ -81,41 +45,15 @@ public class CombatGrid : MonoBehaviour {
                 position.z = y;
                 cell.localPosition = position;
 
-                string terrainType = myTerrainGrid[y, x];
+                string terrainType = myTerrainGridData.GetCellTypeAt(x, y);
                 SpriteRenderer spriteRenderer = cell.GetComponent<SpriteRenderer>();
-                Sprite sprite = GetTerrainSprite(terrainType);
+                Sprite sprite = myTerrainSpriteLibrary.GetTerrainSprite(terrainType);
                 if (sprite != null)
                 {
                     spriteRenderer.sprite = sprite;
                 }
             }
         }
-    }
-
-    Sprite GetTerrainSprite(string text)
-    {
-        foreach (SpriteEntry entry in myTerrainSpriteLibrary)
-        {
-            if (entry.name == text)
-            {
-                return entry.sprite;
-            }
-        }
-        return null;
-    }
-
-    public string ValidateValue(string input)
-    {
-        foreach (SpriteEntry entry in myTerrainSpriteLibrary)
-        {
-            if (entry.name == input)
-                return entry.name;
-        }
-
-        if (myTerrainSpriteLibrary.Count > 0)
-            return myTerrainSpriteLibrary[0].name;
-
-        return "!";
     }
 
     public Transform GetCellAt(int x, int y)
@@ -126,7 +64,7 @@ public class CombatGrid : MonoBehaviour {
 
     public void HighlightCell(Vector2Int position)
     {
-        if (position.x < 0 || position.x >= myCurrentGridWidth || position.y < 0 || position.y >= myCurrentGridHeight)
+        if (position.x < 0 || position.x >= myTerrainGridData.myWidth || position.y < 0 || position.y >= myTerrainGridData.myHeight)
             return;
 
         if (myHighlightedCell != null)
