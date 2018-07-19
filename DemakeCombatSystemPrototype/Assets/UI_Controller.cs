@@ -2,30 +2,34 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class UI_Controller : MonoBehaviour {
-
+public class UI_Controller : MonoBehaviour
+{
     public CombatGrid myGrid;
     public float myRepeatTimeMS = 0.300f;
-    private float myNextInputTime = 0;
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
+    private float myNextInputTime = 0;
+    private int previousVertical = 0;
+    private int previousHorizontal = 0;
+
+    void Update()
+    {
         float horizontalF = Input.GetAxisRaw("Horizontal");
         float verticalF = Input.GetAxisRaw("Vertical");
         int horizontal = (int)(Mathf.CeilToInt(Mathf.Abs(horizontalF)) * Mathf.Sign(horizontalF));
         int vertical = (int)(Mathf.CeilToInt(Mathf.Abs(verticalF)) * Mathf.Sign(verticalF));
 
-        if (horizontal == 0 && vertical == 0)
+        if (vertical != 0 && horizontal != 0)
         {
-            myNextInputTime = 0;
+            horizontal = 0; // no diags
         }
 
-        if (Time.time >= myNextInputTime && (horizontal != 0 || vertical != 0))
+        if (vertical != previousVertical || horizontal != previousHorizontal)
+        {
+            myNextInputTime = 0;
+            previousVertical = vertical;
+            previousHorizontal = horizontal;
+        }
+        else if (Time.time >= myNextInputTime)
         {
             Vector2Int moveVector = new Vector2Int(horizontal, vertical);
             Vector2Int newPosition = myGrid.myHighlightedCell + moveVector;
@@ -34,5 +38,5 @@ public class UI_Controller : MonoBehaviour {
             Debug.Log(vertical + " \t " + verticalF);
         }
     }
-        
+
 }
