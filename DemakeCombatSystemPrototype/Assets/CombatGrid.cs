@@ -3,51 +3,35 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CombatGrid : MonoBehaviour {
-
-    public Vector3 derp2;
-    public int myWidth;
-    public int myHeight;
-    private int myCurrentGridWidth;
-    private int myCurrentGridHeight;
-    public string[,] myTerrainGrid;
-
-    [Serializable]
-    public struct SpriteEntry
-    {
-        public string name;
-        public Sprite sprite;
-    }
-    public List<SpriteEntry> myTerrainSpriteLibrary = new List<SpriteEntry>();
-  
+public class CombatGrid : MonoBehaviour
+{
+    public TerrainGridSpriteLibrary myTerrainSpriteLibrary;
+    public TerrainGridData myTerrainGridData;
     public Transform myCellTemplate;
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+    public Vector2Int myHighlightedCell;
 
-    public void UpdateGrid(int width, int height, bool force = false)
+    public void UpdateGridRepresentation()
     {
-        if (!force && width == myCurrentGridWidth && height == myCurrentGridHeight)
-        {
-            return;
-        }
-
-        myCurrentGridWidth = width;
-        myCurrentGridHeight = height;
+        Debug.Log("REPRESENTATION UPDATE");
     
         Transform terrainLayer = transform.Find("TerrainBaseLayer");
 
+        List<Transform> children = new List<Transform>();
         foreach (Transform child in terrainLayer)
+        {
+            children.Add(child);
+        }
+        foreach (Transform child in children)
         {
             GameObject.DestroyImmediate(child.gameObject);
         }
+
+        if (myTerrainGridData == null)
+            return;
+        
+        int width = myTerrainGridData.myWidth;
+        int height = myTerrainGridData.myHeight;
 
         for (int y = 0; y < height; ++y)
         {
@@ -61,9 +45,9 @@ public class CombatGrid : MonoBehaviour {
                 position.z = y;
                 cell.localPosition = position;
 
-                string terrainType = myTerrainGrid[y, x];
+                string terrainType = myTerrainGridData.GetCellTypeAt(x, y);
                 SpriteRenderer spriteRenderer = cell.GetComponent<SpriteRenderer>();
-                Sprite sprite = GetTerrainSprite(terrainType);
+                Sprite sprite = myTerrainSpriteLibrary.GetTerrainSprite(terrainType);
                 if (sprite != null)
                 {
                     spriteRenderer.sprite = sprite;
@@ -72,15 +56,35 @@ public class CombatGrid : MonoBehaviour {
         }
     }
 
-    Sprite GetTerrainSprite(string text)
+    public Transform GetCellAt(int x, int y)
     {
-        foreach (SpriteEntry entry in myTerrainSpriteLibrary)
+        Transform terrainLayer = transform.Find("TerrainBaseLayer");
+        return terrainLayer.Find("Cell_" + x + "_" + y);
+    }
+
+    public void HighlightCell(Vector2Int position)
+    {
+        if (position.x < 0 || position.x >= myTerrainGridData.myWidth || position.y < 0 || position.y >= myTerrainGridData.myHeight)
+            return;
+
+        if (myHighlightedCell != null)
         {
-            if (entry.name == text)
-            {
-                return entry.sprite;
-            }
+            BlurHighlightedCell();
         }
-        return null;
+
+        myHighlightedCell = position;
+        Transform cell = GetCellAt(myHighlightedCell.x, myHighlightedCell.y);
+
+        float hue, saturation, value;
+        Color.RGBToHSV(Color.blue, out hue, out saturation, out value);
+        saturation *= 0.5f;
+        Color c = Color.HSVToRGB(hue, saturation, value);
+        cell.GetComponent<SpriteRenderer>().color = c;
+    }
+
+    public void BlurHighlightedCell()
+    {
+        Transform cell = GetCellAt(myHighlightedCell.x, myHighlightedCell.y);
+        cell.GetComponent<SpriteRenderer>().color = Color.white;
     }
 }
